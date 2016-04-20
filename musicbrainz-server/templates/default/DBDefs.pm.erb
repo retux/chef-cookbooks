@@ -59,6 +59,9 @@ MusicBrainz::Server::DatabaseConnectionFactory->register_databases(
        <% if @dbdefs[:databases][database][:username] %>
          username => '<%= @dbdefs[:databases][database][:username] %>',
        <% end %>
+       <% if @dbdefs[:databases][database][:password] %>
+         password => '<%= @dbdefs[:databases][database][:password] %>',
+       <% end %>
        <% if @dbdefs[:databases][database][:schema] %>
          schema => '<%= @dbdefs[:databases][database][:schema] %>',
        <% end %>
@@ -209,24 +212,6 @@ sub RENDERER_HOST { '<%= @dbdefs['renderer_host'] %>' }
 
 <% if @dbdefs['renderer_port'] -%>
 sub RENDERER_PORT { <%= @dbdefs['renderer_port'] %> }
-<%- end -%>
-
-sub RENDERER_X_ACCEL_REDIRECT { <%= (@dbdefs['renderer_x_accel_redirect'] && 1) || 0 %> }
-
-<% if @dbdefs['discourse_server'] -%>
-sub DISCOURSE_SERVER { '<%= @dbdefs['discourse_server'] %>' }
-<%- end -%>
-
-<% if @dbdefs['discourse_api_key'] -%>
-sub DISCOURSE_API_KEY { '<%= @dbdefs['discourse_api_key'] %>' }
-<%- end -%>
-
-<% if @dbdefs['discourse_api_username'] -%>
-sub DISCOURSE_API_USERNAME { '<%= @dbdefs['discourse_api_username'] %>' }
-<%- end -%>
-
-<% if @dbdefs['discourse_sso_secret'] -%>
-sub DISCOURSE_SSO_SECRET { '<%= @dbdefs['discourse_sso_secret'].gsub("'", %q(\\\')) %>' }
 <%- end -%>
 
 1;

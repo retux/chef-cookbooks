@@ -1,58 +1,52 @@
-resolver 127.0.0.1;
-
-log_format proxylog
-    '$msec'
-    ' $http_x_mb_remote_addr'
-    ' "$request"'
-    ' $status'
-    ' $bytes_sent'
-    ' z=$gzip_ratio'
-    ' up=$upstream_addr'
-    ' ms=$request_time'
-    ' ums=$upstream_response_time'
-    ' ol=$sent_http_location'
-    ' h=$http_host'
-    ;
-
-upstream mbserver {
-    server unix:/tmp/musicbrainz-server.socket;
-}
-
-upstream mbws {
-    server unix:/tmp/musicbrainz-ws.socket;
-}
-
 server {
     listen <%= @listen_address %>;
     server_name <%= @server_name %>;
+
+    log_format proxylog
+        '$msec'
+        ' $http_x_mb_remote_addr'
+        ' "$request"'
+        ' $status'
+        ' $bytes_sent'
+        ' z=$gzip_ratio'
+        ' up=$upstream_addr'
+        ' ms=$request_time'
+        ' ums=$upstream_response_time'
+        ' ol=$sent_http_location'
+        ' h=$http_host'
+        ;
 
     access_log  /var/log/nginx/001-musicbrainz.access.log;
     access_log  /var/log/nginx/001-musicbrainz.proxy.log proxylog;
     error_log   /var/log/nginx/001-musicbrainz.error.log notice;
 
-    # http://nginx.org/en/docs/http/ngx_http_core_module.html#large_client_header_buffers
-    # prevent 414 on large requests, size of buffer have to be at least the one on gateway proxy
-    # 'upstream sent no valid HTTP/1.0 header' errors may appear if upstream buffers are smaller than proxy ones
-    large_client_header_buffers 8 16k;
-
-    gzip  on;
-    gzip_http_version 1.0;
-    gzip_comp_level 6;
-    gzip_proxied any;
-    gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
-    # make sure gzip does not lose large gzipped js or css files
-    # see http://blog.leetsoft.com/2007/7/25/nginx-gzip-ssl
-    gzip_buffers 16 8k;
-
     location /static/ {
         root /home/musicbrainz/musicbrainz-server/root;
         expires 24h;
+        gzip  on;
+        gzip_http_version 1.0;
+        gzip_comp_level 6;
+        gzip_proxied any;
+        gzip_types text/plain text/html text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+        # make sure gzip does not lose large gzipped js or css files
+        # see http://blog.leetsoft.com/2007/7/25/nginx-gzip-ssl
+        gzip_buffers 16 8k;
     }
 
     location /static/build/ {
         root /home/musicbrainz/musicbrainz-server/root;
         expires max;
+        gzip  on;
         gzip_static on;
+        gzip_http_version 1.0;
+        gzip_comp_level 6;
+        gzip_proxied any;
+        gzip_types text/plain text/html text/css application/json application/x-javascript text/xml appli
+cation/xml application/xml+rss text/javascript;
+        # make sure gzip does not lose large gzipped js or css files
+        # see http://blog.leetsoft.com/2007/7/25/nginx-gzip-ssl
+        gzip_buffers 16 8k;
+
         charset utf-8;
     }
 
@@ -73,14 +67,32 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $http_x_mb_remote_addr;
-        proxy_pass http://mbserver;
+        proxy_pass http://unix:/tmp/musicbrainz-server.socket:;
+
+        gzip  on;
+        gzip_http_version 1.0;
+        gzip_comp_level 6;
+        gzip_proxied any;
+        gzip_types text/plain text/html text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+        # make sure gzip does not lose large gzipped js or css files
+        # see http://blog.leetsoft.com/2007/7/25/nginx-gzip-ssl
+        gzip_buffers 16 8k;
     }
 
     location ~* ^/ws/[12]/ {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $http_x_mb_remote_addr;
-        proxy_pass http://mbws;
+        proxy_pass http://unix:/tmp/musicbrainz-ws.socket:;
+
+        gzip  on;
+        gzip_http_version 1.0;
+        gzip_comp_level 6;
+        gzip_proxied any;
+        gzip_types text/plain text/html text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+        # make sure gzip does not lose large gzipped js or css files
+        # see http://blog.leetsoft.com/2007/7/25/nginx-gzip-ssl
+        gzip_buffers 16 8k;
     }
 
     location ~* ^/internal/search/(.*?)/(.*) {
@@ -95,15 +107,6 @@ server {
 
         proxy_pass $search_url;
 
-        add_header Access-Control-Allow-Origin *;
-    }
-
-    location ~* ^/internal/renderer/(.*?)/(.*) {
-        internal;
-        set $renderer_host $1;
-        set $renderer_path $2;
-        set $renderer_url http://$renderer_host/$renderer_path?$args;
-        proxy_pass $renderer_url;
         add_header Access-Control-Allow-Origin *;
     }
 

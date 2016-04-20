@@ -1,0 +1,18 @@
+#!/bin/bash
+echo starting
+exec 2>&1
+#set -e
+cd mb_server
+umask 022
+  exec \
+        /usr/bin/chpst -u www-data -e /etc/sv/musicbrainz-server/env \
+            start_server --path /tmp/musicbrainz-server.socket -- \
+                plackup \
+                    -Ilib \
+                    --server Starlet \
+                    --env deployment \
+                    --max-workers <%= @options[:nproc] || 1  %> \
+                    --min-reqs-per-child 100 \
+                    --max-reqs-per-child 1000 \
+                    app.psgi
+
