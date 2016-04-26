@@ -167,9 +167,11 @@ script "compile_resources" do
   environment "HOME" => "/home/musicbrainz"
   code <<-EOH
     rm -r node_modules
-    npm install
+    npm install &
+    npm_pid=$!
+    wait $npm_pid
     ./script/compile_resources.sh
-    echo "npm installed corrio carajo!" > /tmp/npm_mbz_install.txt
+    rm -rf /tmp/npm-$npm_pid-*
     EOH
   action :nothing
   notifies :run, "script[kick_services]"
